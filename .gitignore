@@ -15,3 +15,10 @@ packages/frontend/dist/
 # Media & saves (runtime data)
 /media/
 /saves/
+/data/
+
+# Android build artifacts
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties

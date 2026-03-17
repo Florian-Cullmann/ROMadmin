@@ -1,0 +1,62 @@
+services:
+  romadmin-db:
+    image: mariadb:11
+    container_name: romadmin-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-romadmin}
+      MYSQL_USER: ${DB_USER:-romadmin}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      start_interval: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - romadmin-net
+
+  romadmin:
+    build:
+      context: .
+      target: production
+    container_name: romadmin
+    restart: unless-stopped
+    depends_on:
+      romadmin-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://${DB_USER:-romadmin}:${DB_PASSWORD}@romadmin-db:3306/${DB_NAME:-romadmin}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      NODE_ENV: production
+      PORT: 3000
+      ROM_PATH: /roms
+      SAVE_PATH: /saves
+      MEDIA_PATH: /media
+    volumes:
+      - saves_data:/saves
+      - media_data:/media
+      - type: bind
+        source: /mnt/privat/roms/roms
+        target: /roms
+        read_only: true
+        bind:
+          propagation: rslave
+    ports:
+      - "${APP_PORT:-3083}:3000"
+    networks:
+      - romadmin-net
+
+volumes:
+  db_data:
+  saves_data:
+  media_data:
+
+networks:
+  romadmin-net:
+    driver: bridge
