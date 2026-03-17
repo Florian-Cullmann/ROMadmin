@@ -94,7 +94,17 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   // Generate API key for current user (self-service)
+  // Returns existing key if one exists, so multiple devices can share the same key
   fastify.post('/generate-api-key', { onRequest: [verifyAuth] }, async (request) => {
+    const user = await fastify.prisma.user.findUnique({
+      where: { id: request.user.id },
+      select: { apiKey: true },
+    });
+
+    if (user?.apiKey) {
+      return { apiKey: user.apiKey };
+    }
+
     const apiKey = crypto.randomBytes(32).toString('hex');
     await fastify.prisma.user.update({
       where: { id: request.user.id },
