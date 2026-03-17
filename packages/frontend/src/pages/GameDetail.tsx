@@ -250,16 +250,17 @@ export function GameDetail() {
   return (
     <Stack>
       <Grid>
-        <Grid.Col span={{ base: 12, md: 4 }}>
+        <Grid.Col span={{ base: 12, md: 3, lg: 2 }}>
           <Image
             src={game.coverUrl || undefined}
             alt={game.displayName}
             radius="md"
+            maw={264}
             fallbackSrc="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='264' height='374' fill='%231a1b1e'><rect width='264' height='374' rx='8'/></svg>"
           />
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, md: 8 }}>
+        <Grid.Col span={{ base: 12, md: 9, lg: 10 }}>
           <Stack>
             <div>
               <Title order={2}>{game.displayName}</Title>
