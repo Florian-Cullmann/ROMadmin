@@ -1,0 +1,87 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search...",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "noData": "No data available"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "loginTitle": "Sign in to RomAdmin",
+    "loginButton": "Sign In",
+    "invalidCredentials": "Invalid username or password"
+  },
+  "install": {
+    "title": "Welcome to RomAdmin",
+    "subtitle": "Let's set up your ROM library",
+    "stepAdmin": "Admin Account",
+    "stepLibrary": "ROM Library",
+    "stepLanguage": "Language",
+    "stepIgdb": "IGDB API",
+    "adminUsername": "Username",
+    "adminEmail": "Email",
+    "adminPassword": "Password",
+    "romPath": "ROM Library Path",
+    "romPathHint": "Path to your ROM folder (e.g. /roms)",
+    "verifyPath": "Verify Path",
+    "pathValid": "Path is valid",
+    "language": "Interface Language",
+    "igdbClientId": "IGDB Client ID",
+    "igdbClientSecret": "IGDB Client Secret",
+    "igdbHint": "Get your credentials from the Twitch Developer Portal",
+    "complete": "Complete Setup",
+    "success": "Installation complete! You can now log in."
+  },
+  "dashboard": {
+    "title": "Library",
+    "totalGames": "{{count}} games",
+    "totalPlatforms": "{{count}} platforms",
+    "lastScan": "Last scan: {{date}}",
+    "noPlatforms": "No platforms found. Start by scanning your library."
+  },
+  "platform": {
+    "games": "{{count}} games",
+    "noGames": "No games found for this platform.",
+    "allGames": "All Games"
+  },
+  "game": {
+    "releaseDate": "Release Date",
+    "fileSize": "File Size",
+    "platform": "Platform",
+    "saves": "Save Files",
+    "noSaves": "No save files yet.",
+    "uploadSave": "Upload Save",
+    "downloadSave": "Download",
+    "deleteSave": "Delete Save",
+    "fetchMetadata": "Fetch Metadata"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "platforms": "Platforms",
+    "users": "Users",
+    "igdb": "IGDB",
+    "scanner": "Scanner",
+    "rescan": "Rescan Library",
+    "scanning": "Scanning...",
+    "scanComplete": "Scan complete",
+    "createUser": "Create User",
+    "generateApiKey": "Generate API Key",
+    "apiKeyGenerated": "API key generated. Save it now — it won't be shown again."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "settings": "Settings"
+  }
+}

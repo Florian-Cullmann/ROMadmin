@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+coverage/
+.turbo/
+
+# Prisma
+packages/backend/prisma/migrations/**/migration_lock.toml
+
+# Vite
+packages/frontend/dist/
+
+# Media & saves (runtime data)
+/media/
+/saves/

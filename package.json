@@ -1,0 +1,27 @@
+{
+  "name": "romadmin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hosted ROM collection dashboard",
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "build": "pnpm --filter @romadmin/shared build && pnpm --filter @romadmin/frontend build && pnpm --filter @romadmin/backend build",
+    "db:migrate": "pnpm --filter @romadmin/backend exec prisma migrate deploy",
+    "db:generate": "pnpm --filter @romadmin/backend exec prisma generate",
+    "db:seed": "pnpm --filter @romadmin/backend exec prisma db seed",
+    "lint": "pnpm -r run lint"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "esbuild",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
+    ]
+  }
+}

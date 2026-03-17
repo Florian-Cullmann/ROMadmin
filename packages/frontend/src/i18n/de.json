@@ -1,0 +1,87 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "search": "Suchen...",
+    "loading": "Laden...",
+    "error": "Ein Fehler ist aufgetreten",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "submit": "Absenden",
+    "noData": "Keine Daten verfügbar"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "loginTitle": "Bei RomAdmin anmelden",
+    "loginButton": "Anmelden",
+    "invalidCredentials": "Ungültiger Benutzername oder Passwort"
+  },
+  "install": {
+    "title": "Willkommen bei RomAdmin",
+    "subtitle": "Lass uns deine ROM-Bibliothek einrichten",
+    "stepAdmin": "Admin-Konto",
+    "stepLibrary": "ROM-Bibliothek",
+    "stepLanguage": "Sprache",
+    "stepIgdb": "IGDB API",
+    "adminUsername": "Benutzername",
+    "adminEmail": "E-Mail",
+    "adminPassword": "Passwort",
+    "romPath": "ROM-Bibliothek Pfad",
+    "romPathHint": "Pfad zu deinem ROM-Ordner (z.B. /roms)",
+    "verifyPath": "Pfad überprüfen",
+    "pathValid": "Pfad ist gültig",
+    "language": "Sprache der Oberfläche",
+    "igdbClientId": "IGDB Client-ID",
+    "igdbClientSecret": "IGDB Client-Secret",
+    "igdbHint": "Hole deine Zugangsdaten vom Twitch Developer Portal",
+    "complete": "Einrichtung abschließen",
+    "success": "Installation abgeschlossen! Du kannst dich jetzt anmelden."
+  },
+  "dashboard": {
+    "title": "Bibliothek",
+    "totalGames": "{{count}} Spiele",
+    "totalPlatforms": "{{count}} Plattformen",
+    "lastScan": "Letzter Scan: {{date}}",
+    "noPlatforms": "Keine Plattformen gefunden. Starte einen Scan deiner Bibliothek."
+  },
+  "platform": {
+    "games": "{{count}} Spiele",
+    "noGames": "Keine Spiele für diese Plattform gefunden.",
+    "allGames": "Alle Spiele"
+  },
+  "game": {
+    "releaseDate": "Erscheinungsdatum",
+    "fileSize": "Dateigröße",
+    "platform": "Plattform",
+    "saves": "Speicherdateien",
+    "noSaves": "Noch keine Speicherdateien.",
+    "uploadSave": "Speicherdatei hochladen",
+    "downloadSave": "Herunterladen",
+    "deleteSave": "Speicherdatei löschen",
+    "fetchMetadata": "Metadaten abrufen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "general": "Allgemein",
+    "platforms": "Plattformen",
+    "users": "Benutzer",
+    "igdb": "IGDB",
+    "scanner": "Scanner",
+    "rescan": "Bibliothek neu scannen",
+    "scanning": "Scanne...",
+    "scanComplete": "Scan abgeschlossen",
+    "createUser": "Benutzer erstellen",
+    "generateApiKey": "API-Schlüssel generieren",
+    "apiKeyGenerated": "API-Schlüssel generiert. Speichere ihn jetzt — er wird nicht erneut angezeigt."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "settings": "Einstellungen"
+  }
+}

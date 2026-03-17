@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  username     String     @unique @db.VarChar(50)
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  role         UserRole   @default(USER)
+  language     String     @default("en") @db.VarChar(5)
+  apiKey       String?    @unique @map("api_key") @db.VarChar(64)
+  refreshToken String?    @map("refresh_token") @db.VarChar(255)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  saveFiles    SaveFile[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model Platform {
+  id             Int      @id @default(autoincrement())
+  folderName     String   @unique @map("folder_name") @db.VarChar(50)
+  displayName    String   @map("display_name") @db.VarChar(100)
+  slug           String   @unique @db.VarChar(50)
+  igdbPlatformId Int?     @map("igdb_platform_id")
+  thumbnailUrl   String?  @map("thumbnail_url") @db.VarChar(500)
+  fileExtensions String   @map("file_extensions") @db.VarChar(255)
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  games          Game[]
+
+  @@map("platforms")
+}
+
+model Game {
+  id              Int        @id @default(autoincrement())
+  platformId      Int        @map("platform_id")
+  fileName        String     @map("file_name") @db.VarChar(500)
+  filePath        String     @map("file_path") @db.VarChar(1000)
+  fileSize        BigInt     @map("file_size")
+  displayName     String     @map("display_name") @db.VarChar(255)
+  slug            String     @db.VarChar(255)
+  igdbGameId      Int?       @map("igdb_game_id")
+  description     String?    @db.Text
+  thumbnailUrl    String?    @map("thumbnail_url") @db.VarChar(500)
+  coverUrl        String?    @map("cover_url") @db.VarChar(500)
+  releaseDate     DateTime?  @map("release_date")
+  metadataFetched Boolean    @default(false) @map("metadata_fetched")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  platform        Platform   @relation(fields: [platformId], references: [id], onDelete: Cascade)
+  saveFiles       SaveFile[]
+
+  @@unique([platformId, fileName])
+  @@index([platformId])
+  @@index([slug])
+  @@map("games")
+}
+
+model SaveFile {
+  id         Int      @id @default(autoincrement())
+  gameId     Int      @map("game_id")
+  userId     Int      @map("user_id")
+  fileName   String   @map("file_name") @db.VarChar(255)
+  filePath   String   @map("file_path") @db.VarChar(1000)
+  fileSize   BigInt   @map("file_size")
+  deviceName String?  @map("device_name") @db.VarChar(100)
+  isLatest   Boolean  @default(true) @map("is_latest")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, userId])
+  @@index([userId])
+  @@map("save_files")
+}
+
+model Setting {
+  key       String   @id @db.VarChar(100)
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

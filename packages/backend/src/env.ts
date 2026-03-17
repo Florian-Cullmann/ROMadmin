@@ -1,0 +1,23 @@
+import { z } from 'zod';
+
+const envSchema = z.object({
+  DATABASE_URL: z.string(),
+  PORT: z.coerce.number().default(3000),
+  NODE_ENV: z.enum(['development', 'production']).default('development'),
+  JWT_SECRET: z.string().min(16),
+  JWT_REFRESH_SECRET: z.string().min(16),
+  ROM_PATH: z.string().default('/roms'),
+  SAVE_PATH: z.string().default('/saves'),
+  MEDIA_PATH: z.string().default('/media'),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+export function loadEnv(): Env {
+  const result = envSchema.safeParse(process.env);
+  if (!result.success) {
+    console.error('Invalid environment variables:', result.error.flatten().fieldErrors);
+    process.exit(1);
+  }
+  return result.data;
+}

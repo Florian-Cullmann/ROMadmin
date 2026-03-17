@@ -1,0 +1,51 @@
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-romadmin}
+      MYSQL_USER: ${DB_USER:-romadmin}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://${DB_USER:-romadmin}:${DB_PASSWORD}@db:3306/${DB_NAME:-romadmin}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      NODE_ENV: production
+      PORT: 3000
+      ROM_PATH: /roms
+      SAVE_PATH: /saves
+      MEDIA_PATH: /media
+    volumes:
+      - nas_roms:/roms:ro
+      - saves_data:/saves
+      - media_data:/media
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  db_data:
+  saves_data:
+  media_data:
+  nas_roms:
+    driver: local
+    driver_opts:
+      type: cifs
+      o: addr=${NAS_HOST:-192.168.1.205},username=${NAS_USER:-raspberrypi},password=${NAS_PASSWORD},ro,vers=3.0
+      device: "//${NAS_HOST:-192.168.1.205}/${NAS_SHARE:-Privat}/roms/roms"
