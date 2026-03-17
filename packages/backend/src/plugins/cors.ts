@@ -4,7 +4,7 @@ import type { FastifyInstance } from 'fastify';
 
 export const corsPlugin = fp(async (fastify: FastifyInstance) => {
   await fastify.register(fastifyCors, {
-    origin: true,
+    origin: fastify.env.CORS_ORIGIN ?? true,
     credentials: true,
   });
 });

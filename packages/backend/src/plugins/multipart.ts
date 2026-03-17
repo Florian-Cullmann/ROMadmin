@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 export const multipartPlugin = fp(async (fastify: FastifyInstance) => {
   await fastify.register(fastifyMultipart, {
     limits: {
-      fileSize: 50 * 1024 * 1024, // 50MB
+      fileSize: 200 * 1024 * 1024, // 200MB
     },
   });
 });

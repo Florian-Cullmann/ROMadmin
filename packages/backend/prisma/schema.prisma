@@ -57,6 +57,7 @@ model Game {
   thumbnailUrl    String?    @map("thumbnail_url") @db.VarChar(500)
   coverUrl        String?    @map("cover_url") @db.VarChar(500)
   releaseDate     DateTime?  @map("release_date")
+  isDirectory     Boolean    @default(false) @map("is_directory")
   metadataFetched Boolean    @default(false) @map("metadata_fetched")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")

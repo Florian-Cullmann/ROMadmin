@@ -3,6 +3,7 @@ import { loginSchema } from '@romadmin/shared';
 import { verifyPassword } from '../utils/password.js';
 import { verifyAuth } from '../hooks/auth.js';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
 export async function authRoutes(fastify: FastifyInstance) {
   // Login
@@ -90,5 +91,15 @@ export async function authRoutes(fastify: FastifyInstance) {
       select: { id: true, username: true, email: true, role: true, language: true, createdAt: true, updatedAt: true },
     });
     return user;
+  });
+
+  // Generate API key for current user (self-service)
+  fastify.post('/generate-api-key', { onRequest: [verifyAuth] }, async (request) => {
+    const apiKey = crypto.randomBytes(32).toString('hex');
+    await fastify.prisma.user.update({
+      where: { id: request.user.id },
+      data: { apiKey },
+    });
+    return { apiKey };
   });
 }

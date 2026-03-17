@@ -37,6 +37,7 @@ export interface Game {
   thumbnailUrl: string | null;
   coverUrl: string | null;
   releaseDate: string | null;
+  isDirectory: boolean;
   metadataFetched: boolean;
   createdAt: string;
   updatedAt: string;

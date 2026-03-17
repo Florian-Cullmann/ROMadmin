@@ -36,11 +36,15 @@ import {
   IconCheck,
   IconPlus,
   IconDeviceFloppy,
+  IconDeviceMobile,
+  IconUpload,
+  IconDownload,
 } from '@tabler/icons-react';
 import { startScan, getScanStatus } from '../api/scanner';
 import { getPlatforms } from '../api/platforms';
 import { getUsers, createUser, deleteUser, generateApiKey } from '../api/users';
 import { getSettings, updateSettings } from '../api/settings';
+import { getApkInfo, uploadApk, deleteApk, getApkDownloadUrl } from '../api/apk';
 import { useAuthStore } from '../stores/auth';
 
 export function Settings() {
@@ -72,6 +76,9 @@ export function Settings() {
           <Tabs.Tab value="general" leftSection={<IconDeviceFloppy size={16} />}>
             {t('settings.general')}
           </Tabs.Tab>
+          <Tabs.Tab value="android" leftSection={<IconDeviceMobile size={16} />}>
+            Android App
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="scanner" pt="md"><ScannerTab /></Tabs.Panel>
@@ -79,6 +86,7 @@ export function Settings() {
         <Tabs.Panel value="users" pt="md"><UsersTab /></Tabs.Panel>
         <Tabs.Panel value="igdb" pt="md"><IGDBTab /></Tabs.Panel>
         <Tabs.Panel value="general" pt="md"><GeneralTab /></Tabs.Panel>
+        <Tabs.Panel value="android" pt="md"><AndroidAppTab /></Tabs.Panel>
       </Tabs>
     </Stack>
   );
@@ -434,6 +442,127 @@ function IGDBTab() {
           </Group>
         </Stack>
       </form>
+    </Paper>
+  );
+}
+
+function AndroidAppTab() {
+  const queryClient = useQueryClient();
+  const [apkFile, setApkFile] = useState<File | null>(null);
+
+  const { data: apkInfo, isLoading } = useQuery({
+    queryKey: ['apk-info'],
+    queryFn: getApkInfo,
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => uploadApk(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apk-info'] });
+      setApkFile(null);
+      notifications.show({ title: 'Success', message: 'APK uploaded', color: 'green' });
+    },
+    onError: (err) => {
+      notifications.show({ title: 'Error', message: err.message, color: 'red' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteApk,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apk-info'] });
+      notifications.show({ title: 'Deleted', message: 'APK removed', color: 'orange' });
+    },
+  });
+
+  const formatSize = (bytes: string) => {
+    const b = parseInt(bytes);
+    if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+    return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <Paper p="md" withBorder>
+      <Stack>
+        <Text fw={500} size="lg">Android App</Text>
+        <Text size="sm" c="dimmed">
+          Upload the RomAdmin APK here so you can download it directly on your handheld devices.
+          Open this page on your device's browser and tap the download link.
+        </Text>
+
+        {apkInfo?.exists ? (
+          <Alert color="green" variant="light" title="APK Available">
+            <Stack gap="xs">
+              <Text size="sm">
+                Size: {formatSize(apkInfo.size!)} &middot; Updated: {new Date(apkInfo.updatedAt!).toLocaleString()}
+              </Text>
+              <Group>
+                <Button
+                  component="a"
+                  href={getApkDownloadUrl()}
+                  download
+                  leftSection={<IconDownload size={16} />}
+                  variant="light"
+                >
+                  Download APK
+                </Button>
+                <Button
+                  variant="light"
+                  color="red"
+                  leftSection={<IconTrash size={16} />}
+                  onClick={() => deleteMutation.mutate()}
+                  loading={deleteMutation.isPending}
+                >
+                  Delete
+                </Button>
+              </Group>
+            </Stack>
+          </Alert>
+        ) : (
+          <Alert color="gray" variant="light" title="No APK uploaded">
+            <Text size="sm">Upload an APK file to make it available for download on your devices.</Text>
+          </Alert>
+        )}
+
+        <Group align="flex-end">
+          <TextInput
+            label="Upload new APK"
+            placeholder="Choose .apk file"
+            value={apkFile?.name ?? ''}
+            readOnly
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.apk';
+              input.onchange = (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) setApkFile(file);
+              };
+              input.click();
+            }}
+            style={{ flex: 1, cursor: 'pointer' }}
+          />
+          <Button
+            onClick={() => apkFile && uploadMutation.mutate(apkFile)}
+            disabled={!apkFile}
+            loading={uploadMutation.isPending}
+            leftSection={<IconUpload size={16} />}
+          >
+            Upload
+          </Button>
+        </Group>
+
+        {apkInfo?.exists && (
+          <Alert color="blue" variant="light" title="Download on your device">
+            <Text size="sm">
+              On your handheld, open a browser and go to this URL:
+            </Text>
+            <Code block mt="xs">
+              {`${window.location.origin}/api/downloads/apk`}
+            </Code>
+          </Alert>
+        )}
+      </Stack>
     </Paper>
   );
 }

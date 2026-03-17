@@ -8,6 +8,7 @@ import { saveRoutes } from './saves.js';
 import { settingsRoutes } from './settings.js';
 import { userRoutes } from './users.js';
 import { scannerRoutes } from './scanner.js';
+import { downloadRoutes } from './downloads.js';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Install guard: block everything except /api/install/* if not installed
@@ -19,6 +20,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
   await fastify.register(platformRoutes, { prefix: '/platforms' });
   await fastify.register(gameRoutes, { prefix: '/games' });
   await fastify.register(saveRoutes, { prefix: '/saves' });
+  await fastify.register(downloadRoutes, { prefix: '/downloads' });
   await fastify.register(settingsRoutes, { prefix: '/settings' });
   await fastify.register(userRoutes, { prefix: '/users' });
   await fastify.register(scannerRoutes, { prefix: '/scanner' });

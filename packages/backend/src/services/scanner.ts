@@ -110,7 +110,7 @@ export async function scanLibrary(fastify: FastifyInstance) {
         continue;
       }
 
-      const extensions = platform.fileExtensions.split(',').map((e) => e.trim().toLowerCase());
+      const extensions = platform.fileExtensions.split(',').map((ext: string) => ext.trim().toLowerCase());
       const games = await scanPlatformFolder(platformPath, extensions);
 
       scanStatus.totalFiles += games.length;
@@ -124,10 +124,10 @@ export async function scanLibrary(fastify: FastifyInstance) {
         });
 
         if (existing) {
-          if (existing.fileSize !== game.fileSize) {
+          if (existing.fileSize !== game.fileSize || existing.isDirectory !== game.isDirectory) {
             await fastify.prisma.game.update({
               where: { id: existing.id },
-              data: { fileSize: game.fileSize },
+              data: { fileSize: game.fileSize, isDirectory: game.isDirectory },
             });
             scanStatus.updatedGames++;
           }
@@ -140,6 +140,7 @@ export async function scanLibrary(fastify: FastifyInstance) {
               fileSize: game.fileSize,
               displayName,
               slug,
+              isDirectory: game.isDirectory,
             },
           });
           scanStatus.newGames++;

@@ -9,6 +9,7 @@ const envSchema = z.object({
   ROM_PATH: z.string().default('/roms'),
   SAVE_PATH: z.string().default('/saves'),
   MEDIA_PATH: z.string().default('/media'),
+  CORS_ORIGIN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { SyncStatusRequest, SyncAction, SyncStatusGame } from '@romadmin/shared';
 import { verifyAuth } from '../hooks/auth.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -13,8 +14,16 @@ export async function saveRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'NO_FILE', message: 'No file uploaded' });
     }
 
-    const gameId = parseInt(data.fields.gameId?.toString() ?? '');
-    const deviceName = data.fields.deviceName?.toString() || null;
+    const gameIdField = data.fields.gameId;
+    const gameIdRaw = typeof gameIdField === 'object' && gameIdField !== null && 'value' in gameIdField
+      ? (gameIdField as { value: string }).value
+      : String(gameIdField ?? '');
+    const gameId = parseInt(gameIdRaw);
+
+    const deviceNameField = data.fields.deviceName;
+    const deviceName = typeof deviceNameField === 'object' && deviceNameField !== null && 'value' in deviceNameField
+      ? (deviceNameField as { value: string }).value
+      : (deviceNameField ? String(deviceNameField) : null);
 
     if (!gameId || isNaN(gameId)) {
       return reply.status(400).send({ error: 'INVALID_GAME_ID', message: 'Valid gameId is required' });
@@ -79,7 +88,7 @@ export async function saveRoutes(fastify: FastifyInstance) {
       where,
       orderBy: { uploadedAt: 'desc' },
     });
-    return saves.map((s) => ({ ...s, fileSize: s.fileSize.toString() }));
+    return saves.map((s: typeof saves[number]) => ({ ...s, fileSize: s.fileSize.toString() }));
   });
 
   // Download save file
@@ -122,5 +131,65 @@ export async function saveRoutes(fastify: FastifyInstance) {
 
     await fastify.prisma.saveFile.delete({ where: { id: save.id } });
     return { success: true };
+  });
+
+  // Save sync status — batch check which games need upload/download
+  fastify.post<{ Body: SyncStatusRequest }>('/sync-status', async (request, reply) => {
+    const { games: clientGames } = request.body;
+
+    if (!Array.isArray(clientGames) || clientGames.length === 0) {
+      return reply.status(400).send({ error: 'VALIDATION_ERROR', message: 'games array is required' });
+    }
+
+    const gameIds = clientGames.map((g) => g.gameId);
+
+    // Get the latest save for each game for this user
+    const serverSaves = await fastify.prisma.saveFile.findMany({
+      where: {
+        gameId: { in: gameIds },
+        userId: request.user.id,
+        isLatest: true,
+      },
+    });
+
+    // Index by gameId for quick lookup
+    type SaveRecord = typeof serverSaves[number];
+    const savesByGameId: Record<number, SaveRecord> = {};
+    for (const s of serverSaves) {
+      savesByGameId[s.gameId] = s;
+    }
+
+    const results: SyncStatusGame[] = clientGames.map(({ gameId, localTimestamp }) => {
+      const serverSave: SaveRecord | undefined = savesByGameId[gameId];
+
+      if (!serverSave) {
+        return { gameId, action: 'no_server_save' as SyncAction };
+      }
+
+      const serverSaveInfo = {
+        id: serverSave.id,
+        uploadedAt: serverSave.uploadedAt.toISOString(),
+        fileName: serverSave.fileName,
+        fileSize: serverSave.fileSize.toString(),
+        deviceName: serverSave.deviceName,
+      };
+
+      if (!localTimestamp) {
+        return { gameId, action: 'download' as SyncAction, serverSave: serverSaveInfo };
+      }
+
+      const serverTime = serverSave.uploadedAt.getTime();
+      const localTime = new Date(localTimestamp).getTime();
+
+      if (serverTime > localTime) {
+        return { gameId, action: 'download' as SyncAction, serverSave: serverSaveInfo };
+      } else if (localTime > serverTime) {
+        return { gameId, action: 'upload' as SyncAction, serverSave: serverSaveInfo };
+      } else {
+        return { gameId, action: 'in_sync' as SyncAction, serverSave: serverSaveInfo };
+      }
+    });
+
+    return { games: results };
   });
 }

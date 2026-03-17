@@ -37,7 +37,7 @@ export async function gameRoutes(fastify: FastifyInstance) {
     ]);
 
     return {
-      data: data.map((g) => ({ ...g, fileSize: g.fileSize.toString() })),
+      data: data.map((g: typeof data[number]) => ({ ...g, fileSize: g.fileSize.toString() })),
       total,
       page: pageNum,
       limit: limitNum,

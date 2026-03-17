@@ -22,9 +22,11 @@ COPY --from=build /app/packages/shared/dist packages/shared/dist/
 COPY --from=build /app/packages/backend/package.json packages/backend/
 COPY --from=build /app/packages/backend/dist packages/backend/dist/
 COPY --from=build /app/packages/backend/prisma packages/backend/prisma/
+COPY --from=build /app/packages/frontend/package.json packages/frontend/
 COPY --from=build /app/packages/frontend/dist packages/frontend/dist/
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @romadmin/backend exec prisma generate
+RUN pnpm prune --prod
 EXPOSE 3000
 CMD ["node", "packages/backend/dist/server.js"]
 
