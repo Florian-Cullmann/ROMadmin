@@ -1,6 +1,7 @@
 package com.romadmin.app.data.repository
 
 import android.os.Build
+import android.util.Log
 import com.romadmin.app.data.local.dao.DownloadDao
 import com.romadmin.app.data.local.dao.SaveSyncDao
 import com.romadmin.app.data.local.entity.DownloadStatus
@@ -16,7 +17,6 @@ import kotlinx.coroutines.flow.first
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -31,6 +31,8 @@ class SaveSyncRepository @Inject constructor(
     private val prefs: AppPreferences,
 ) {
     companion object {
+        private const val TAG = "SaveSyncRepository"
+
         private val SAVE_EXTENSIONS = listOf(
             ".srm", ".sav", ".sav0", ".sav1", ".sav2", ".sav3",
             ".sav4", ".sav5", ".sav6", ".sav7", ".sav8", ".sav9",
@@ -47,10 +49,27 @@ class SaveSyncRepository @Inject constructor(
     fun observeSyncState(gameId: Int): Flow<SaveSyncState?> = saveSyncDao.observeByGameId(gameId)
 
     /**
-     * Sync a single game's save file by gameId.
-     * Works regardless of whether the game was downloaded through the app —
-     * only needs the RetroArch saves directory and the game's metadata from the server.
+     * Determine the timestamp to send to the server for sync comparison.
+     *
+     * The server compares our localTimestamp against its `uploadedAt` (server clock).
+     * After an upload, `uploadedAt` is always later than the file's mtime because
+     * the server records the time it received the file, not when RetroArch wrote it.
+     *
+     * To avoid a "download what you just uploaded" ping-pong:
+     * - If the file hasn't changed since last sync → send the server's timestamp
+     * - If the file IS newer than last sync → send the file's actual mtime
      */
+    private fun getEffectiveTimestamp(fileMtime: Long, syncState: SaveSyncState?): String {
+        if (syncState?.serverTimestamp != null && syncState.localTimestamp != null) {
+            if (fileMtime <= syncState.localTimestamp) {
+                // File unchanged since last sync — use server timestamp to stay "in_sync"
+                return ISO_FORMAT.format(Date(syncState.serverTimestamp))
+            }
+        }
+        // File is newer or no previous sync — send actual mtime
+        return ISO_FORMAT.format(Date(fileMtime))
+    }
+
     suspend fun syncSingleGame(gameId: Int, platformFolderName: String, romFileName: String): Boolean {
         val savesRoot = prefs.savesRootPath.first() ?: return false
         val deviceName = prefs.deviceName.first() ?: Build.MODEL
@@ -58,7 +77,10 @@ class SaveSyncRepository @Inject constructor(
 
         val saveDir = getSaveDir(platformFolderName) ?: return false
         val localSaveFile = findSaveFile(saveDir, baseName)
-        val localTimestamp = localSaveFile?.let { ISO_FORMAT.format(Date(it.lastModified())) }
+        val syncState = saveSyncDao.getByGameId(gameId)
+        val localTimestamp = localSaveFile?.let {
+            getEffectiveTimestamp(it.lastModified(), syncState)
+        }
 
         val request = SyncStatusRequest(deviceName, listOf(SyncGameEntry(gameId, localTimestamp)))
         val response = try {
@@ -73,12 +95,22 @@ class SaveSyncRepository @Inject constructor(
         when (gameStatus.action) {
             "upload", "no_server_save" -> {
                 val file = localSaveFile ?: return false
-                // Stability check
                 val mtimeBefore = file.lastModified()
                 delay(2000)
                 if (file.lastModified() != mtimeBefore) return false
-                uploadSave(gameId, file, deviceName)
-                updateSyncState(gameId, file, file.lastModified())
+                val savedFile = uploadSave(gameId, file, deviceName)
+                val serverTime = try {
+                    ISO_FORMAT.parse(savedFile.uploadedAt)?.time ?: System.currentTimeMillis()
+                } catch (_: Exception) { System.currentTimeMillis() }
+                saveSyncDao.upsert(SaveSyncState(
+                    gameId = gameId,
+                    localSaveFileName = file.name,
+                    localTimestamp = file.lastModified(),
+                    serverSaveId = savedFile.id,
+                    serverTimestamp = serverTime,
+                    lastSyncAt = System.currentTimeMillis(),
+                    syncStatus = SyncStatus.IN_SYNC,
+                ))
                 return true
             }
             "download" -> {
@@ -96,7 +128,15 @@ class SaveSyncRepository @Inject constructor(
                 val serverTime = try {
                     ISO_FORMAT.parse(serverSave.uploadedAt)?.time ?: System.currentTimeMillis()
                 } catch (_: Exception) { System.currentTimeMillis() }
-                updateSyncState(gameId, targetFile, serverTime)
+                saveSyncDao.upsert(SaveSyncState(
+                    gameId = gameId,
+                    localSaveFileName = targetFile.name,
+                    localTimestamp = targetFile.lastModified(),
+                    serverSaveId = serverSave.id,
+                    serverTimestamp = serverTime,
+                    lastSyncAt = System.currentTimeMillis(),
+                    syncStatus = SyncStatus.IN_SYNC,
+                ))
                 return true
             }
             "in_sync" -> {
@@ -119,50 +159,45 @@ class SaveSyncRepository @Inject constructor(
         return false
     }
 
-    /**
-     * Resolve the save directory for a given platform.
-     * Structure: {savesRootPath}/{coreFolder}/
-     * e.g. /sdcard/RetroArch/saves/mGBA/
-     */
     private suspend fun getSaveDir(platformFolderName: String): File? {
         val savesRoot = prefs.savesRootPath.first() ?: return null
         val coreFolder = prefs.getCoreFolderForPlatform(platformFolderName)
         return File(savesRoot, coreFolder)
     }
 
-    /**
-     * Scan RetroArch save directories and sync with server.
-     * Returns the number of files uploaded + downloaded.
-     */
     suspend fun performSync(): Int {
         val savesRoot = prefs.savesRootPath.first() ?: return 0
         val deviceName = prefs.deviceName.first() ?: Build.MODEL
 
-        // Get all completed downloads — those are the games we have locally
         val downloads = downloadDao.getByStatus(DownloadStatus.COMPLETED).first()
         if (downloads.isEmpty()) return 0
 
-        // Scan for local save files in RetroArch saves directory
+        // Scan for local save files
         val localSaves = mutableMapOf<Int, Pair<File, Long>>() // gameId -> (saveFile, mtime)
         for (download in downloads) {
             val saveDir = getSaveDir(download.platformFolderName) ?: continue
             val baseName = File(download.fileName).nameWithoutExtension
-
-            // Look for save files in the core's save folder
             val saveFile = findSaveFile(saveDir, baseName)
             if (saveFile != null) {
                 localSaves[download.gameId] = Pair(saveFile, saveFile.lastModified())
             }
         }
 
-        // Build sync status request
+        // Load previous sync states to get server timestamps
+        val gameIds = downloads.map { it.gameId }
+        val syncStates = saveSyncDao.getByGameIds(gameIds).associateBy { it.gameId }
+
+        // Build sync status request using effective timestamps
         val gameEntries = downloads.map { download ->
             val localSave = localSaves[download.gameId]
+            val syncState = syncStates[download.gameId]
             SyncGameEntry(
                 gameId = download.gameId,
-                localTimestamp = localSave?.let { ISO_FORMAT.format(Date(it.second)) },
+                localTimestamp = localSave?.let { getEffectiveTimestamp(it.second, syncState) },
             )
         }
+
+        Log.d(TAG, "Syncing ${gameEntries.size} games, ${localSaves.size} with local saves")
 
         val response = api.syncStatus(SyncStatusRequest(deviceName, gameEntries))
 
@@ -174,29 +209,41 @@ class SaveSyncRepository @Inject constructor(
                     val local = localSaves[gameStatus.gameId] ?: continue
                     val saveFile = local.first
 
-                    // Stability check: wait 2s then verify mtime hasn't changed
                     val mtimeBefore = saveFile.lastModified()
                     delay(2000)
-                    if (saveFile.lastModified() != mtimeBefore) continue // file is being written
+                    if (saveFile.lastModified() != mtimeBefore) {
+                        Log.d(TAG, "Skipping game ${gameStatus.gameId}: file still being written")
+                        continue
+                    }
 
-                    uploadSave(gameStatus.gameId, saveFile, deviceName)
-                    updateSyncState(gameStatus.gameId, saveFile, saveFile.lastModified())
+                    Log.d(TAG, "Uploading save for game ${gameStatus.gameId}: ${saveFile.name}")
+                    val savedFile = uploadSave(gameStatus.gameId, saveFile, deviceName)
+                    val serverTime = try {
+                        ISO_FORMAT.parse(savedFile.uploadedAt)?.time ?: System.currentTimeMillis()
+                    } catch (_: Exception) { System.currentTimeMillis() }
+                    saveSyncDao.upsert(SaveSyncState(
+                        gameId = gameStatus.gameId,
+                        localSaveFileName = saveFile.name,
+                        localTimestamp = saveFile.lastModified(),
+                        serverSaveId = savedFile.id,
+                        serverTimestamp = serverTime,
+                        lastSyncAt = System.currentTimeMillis(),
+                        syncStatus = SyncStatus.IN_SYNC,
+                    ))
                     syncCount++
                 }
                 "download" -> {
                     val serverSave = gameStatus.serverSave ?: continue
                     val download = downloads.find { it.gameId == gameStatus.gameId } ?: continue
 
-                    // Resolve save directory for this platform's core
                     val saveDir = getSaveDir(download.platformFolderName) ?: continue
                     saveDir.mkdirs()
                     val baseName = File(download.fileName).nameWithoutExtension
 
-                    // Download save from server
+                    Log.d(TAG, "Downloading save for game ${gameStatus.gameId}")
                     val dlResponse = api.downloadSave(serverSave.id)
                     val body = dlResponse.body() ?: continue
 
-                    // Determine save extension from server filename
                     val serverExt = serverSave.fileName.substringAfterLast('.', "srm")
                     val localSaveFile = File(saveDir, "$baseName.$serverExt")
 
@@ -212,7 +259,15 @@ class SaveSyncRepository @Inject constructor(
                         System.currentTimeMillis()
                     }
 
-                    updateSyncState(gameStatus.gameId, localSaveFile, serverTime)
+                    saveSyncDao.upsert(SaveSyncState(
+                        gameId = gameStatus.gameId,
+                        localSaveFileName = localSaveFile.name,
+                        localTimestamp = localSaveFile.lastModified(),
+                        serverSaveId = serverSave.id,
+                        serverTimestamp = serverTime,
+                        lastSyncAt = System.currentTimeMillis(),
+                        syncStatus = SyncStatus.IN_SYNC,
+                    ))
                     syncCount++
                 }
                 "in_sync" -> {
@@ -236,6 +291,7 @@ class SaveSyncRepository @Inject constructor(
             }
         }
 
+        Log.i(TAG, "Sync completed: $syncCount files synced")
         return syncCount
     }
 
@@ -248,7 +304,7 @@ class SaveSyncRepository @Inject constructor(
         return null
     }
 
-    private suspend fun uploadSave(gameId: Int, file: File, deviceName: String) {
+    private suspend fun uploadSave(gameId: Int, file: File, deviceName: String): com.romadmin.app.domain.model.SaveFile {
         val requestFile = file.asRequestBody("application/octet-stream".toMediaType())
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -257,20 +313,6 @@ class SaveSyncRepository @Inject constructor(
             .addFormDataPart("file", file.name, requestFile)
             .build()
 
-        api.uploadSaveRaw(body)
-    }
-
-    private suspend fun updateSyncState(gameId: Int, saveFile: File, timestamp: Long) {
-        saveSyncDao.upsert(
-            SaveSyncState(
-                gameId = gameId,
-                localSaveFileName = saveFile.name,
-                localTimestamp = timestamp,
-                serverSaveId = null,
-                serverTimestamp = timestamp,
-                lastSyncAt = System.currentTimeMillis(),
-                syncStatus = SyncStatus.IN_SYNC,
-            )
-        )
+        return api.uploadSaveRaw(body)
     }
 }
