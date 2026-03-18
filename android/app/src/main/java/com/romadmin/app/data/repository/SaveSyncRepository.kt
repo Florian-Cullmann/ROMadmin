@@ -48,28 +48,6 @@ class SaveSyncRepository @Inject constructor(
 
     fun observeSyncState(gameId: Int): Flow<SaveSyncState?> = saveSyncDao.observeByGameId(gameId)
 
-    /**
-     * Determine the timestamp to send to the server for sync comparison.
-     *
-     * The server compares our localTimestamp against its `uploadedAt` (server clock).
-     * After an upload, `uploadedAt` is always later than the file's mtime because
-     * the server records the time it received the file, not when RetroArch wrote it.
-     *
-     * To avoid a "download what you just uploaded" ping-pong:
-     * - If the file hasn't changed since last sync → send the server's timestamp
-     * - If the file IS newer than last sync → send the file's actual mtime
-     */
-    private fun getEffectiveTimestamp(fileMtime: Long, syncState: SaveSyncState?): String {
-        if (syncState?.serverTimestamp != null && syncState.localTimestamp != null) {
-            if (fileMtime <= syncState.localTimestamp) {
-                // File unchanged since last sync — use server timestamp to stay "in_sync"
-                return ISO_FORMAT.format(Date(syncState.serverTimestamp))
-            }
-        }
-        // File is newer or no previous sync — send actual mtime
-        return ISO_FORMAT.format(Date(fileMtime))
-    }
-
     suspend fun syncSingleGame(gameId: Int, platformFolderName: String, romFileName: String): Boolean {
         val savesRoot = prefs.savesRootPath.first() ?: return false
         val deviceName = prefs.deviceName.first() ?: Build.MODEL
@@ -77,9 +55,8 @@ class SaveSyncRepository @Inject constructor(
 
         val saveDir = getSaveDir(platformFolderName) ?: return false
         val localSaveFile = findSaveFile(saveDir, baseName)
-        val syncState = saveSyncDao.getByGameId(gameId)
         val localTimestamp = localSaveFile?.let {
-            getEffectiveTimestamp(it.lastModified(), syncState)
+            ISO_FORMAT.format(Date(it.lastModified()))
         }
 
         val request = SyncStatusRequest(deviceName, listOf(SyncGameEntry(gameId, localTimestamp)))
@@ -183,17 +160,13 @@ class SaveSyncRepository @Inject constructor(
             }
         }
 
-        // Load previous sync states to get server timestamps
-        val gameIds = downloads.map { it.gameId }
-        val syncStates = saveSyncDao.getByGameIds(gameIds).associateBy { it.gameId }
-
-        // Build sync status request using effective timestamps
+        // Build sync status request — always send file's actual mtime.
+        // Server compares against clientTimestamp (stored during upload) to avoid ping-pong.
         val gameEntries = downloads.map { download ->
             val localSave = localSaves[download.gameId]
-            val syncState = syncStates[download.gameId]
             SyncGameEntry(
                 gameId = download.gameId,
-                localTimestamp = localSave?.let { getEffectiveTimestamp(it.second, syncState) },
+                localTimestamp = localSave?.let { ISO_FORMAT.format(Date(it.second)) },
             )
         }
 
