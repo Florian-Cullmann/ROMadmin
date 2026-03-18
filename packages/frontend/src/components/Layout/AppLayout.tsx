@@ -105,7 +105,7 @@ export function AppLayout() {
         <Divider my="xs" label="Platforms" labelPosition="left" />
 
         <AppShell.Section grow component={ScrollArea}>
-          {platforms?.map((platform) => (
+          {platforms?.filter((p) => p._count?.games).map((platform) => (
             <NavLink
               key={platform.id}
               label={platform.displayName}

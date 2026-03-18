@@ -16,14 +16,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.*
 import com.romadmin.app.data.preferences.AppPreferences
+import com.romadmin.app.data.repository.AuthRepository
 import com.romadmin.app.data.repository.SaveSyncRepository
 import com.romadmin.app.worker.SaveSyncWorker
+import kotlinx.coroutines.flow.first
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,11 +37,19 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
+sealed class ReAuthState {
+    data object Idle : ReAuthState()
+    data object Loading : ReAuthState()
+    data object Success : ReAuthState()
+    data class Error(val message: String) : ReAuthState()
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     val prefs: AppPreferences,
     private val saveSyncRepository: SaveSyncRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     val serverUrl = prefs.serverUrl.stateIn(viewModelScope, SharingStarted.Lazily, null)
@@ -46,6 +57,32 @@ class SettingsViewModel @Inject constructor(
     val storageRoot = prefs.storageRoot.stateIn(viewModelScope, SharingStarted.Lazily, null)
     val savesRoot = prefs.savesRootPath.stateIn(viewModelScope, SharingStarted.Lazily, null)
     val deviceName = prefs.deviceName.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    private val _reAuthState = MutableStateFlow<ReAuthState>(ReAuthState.Idle)
+    val reAuthState = _reAuthState.asStateFlow()
+
+    fun reAuthenticate(usernameInput: String, password: String) {
+        viewModelScope.launch {
+            _reAuthState.value = ReAuthState.Loading
+            try {
+                val url = prefs.serverUrl.first() ?: run {
+                    _reAuthState.value = ReAuthState.Error("No server URL configured")
+                    return@launch
+                }
+                val response = authRepository.login(url, usernameInput, password)
+                val apiKey = authRepository.generateApiKey(url, response.accessToken)
+                prefs.setApiKey(apiKey)
+                prefs.setUser(response.user.id, response.user.username)
+                _reAuthState.value = ReAuthState.Success
+            } catch (e: Exception) {
+                _reAuthState.value = ReAuthState.Error("Login failed: ${e.message}")
+            }
+        }
+    }
+
+    fun resetReAuthState() {
+        _reAuthState.value = ReAuthState.Idle
+    }
 
     fun updateDeviceName(name: String) {
         viewModelScope.launch { prefs.setDeviceName(name) }
@@ -140,12 +177,87 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Account section
+            val reAuthState by viewModel.reAuthState.collectAsState()
+            var showReAuthDialog by remember { mutableStateOf(false) }
+
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Account", style = MaterialTheme.typography.titleMedium)
                     Text("Server: ${serverUrl ?: "Not set"}", style = MaterialTheme.typography.bodySmall)
                     Text("User: ${username ?: "Not set"}", style = MaterialTheme.typography.bodySmall)
+
+                    OutlinedButton(
+                        onClick = { showReAuthDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Default.Key, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Re-authenticate")
+                    }
                 }
+            }
+
+            if (showReAuthDialog) {
+                var reAuthUser by remember { mutableStateOf(username ?: "") }
+                var reAuthPass by remember { mutableStateOf("") }
+
+                AlertDialog(
+                    onDismissRequest = {
+                        showReAuthDialog = false
+                        viewModel.resetReAuthState()
+                    },
+                    title = { Text("Re-authenticate") },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Sign in again to refresh your API key.", style = MaterialTheme.typography.bodySmall)
+                            OutlinedTextField(
+                                value = reAuthUser,
+                                onValueChange = { reAuthUser = it },
+                                label = { Text("Username") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            OutlinedTextField(
+                                value = reAuthPass,
+                                onValueChange = { reAuthPass = it },
+                                label = { Text("Password") },
+                                visualTransformation = PasswordVisualTransformation(),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            when (val state = reAuthState) {
+                                is ReAuthState.Error -> Text(state.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                                is ReAuthState.Success -> {
+                                    Text("Authenticated successfully!", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                                    LaunchedEffect(Unit) {
+                                        kotlinx.coroutines.delay(1000)
+                                        showReAuthDialog = false
+                                        viewModel.resetReAuthState()
+                                    }
+                                }
+                                else -> {}
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { viewModel.reAuthenticate(reAuthUser, reAuthPass) },
+                            enabled = reAuthState !is ReAuthState.Loading && reAuthUser.isNotBlank() && reAuthPass.isNotBlank(),
+                        ) {
+                            if (reAuthState is ReAuthState.Loading) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text("Sign In")
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showReAuthDialog = false
+                            viewModel.resetReAuthState()
+                        }) { Text("Cancel") }
+                    },
+                )
             }
 
             // Storage section
