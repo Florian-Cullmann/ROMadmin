@@ -88,6 +88,7 @@ export interface SyncStatusGame {
   serverSave?: {
     id: number;
     uploadedAt: string;
+    clientTimestamp: string | null;
     fileName: string;
     fileSize: string;
     deviceName: string | null;

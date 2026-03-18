@@ -169,6 +169,7 @@ export async function saveRoutes(fastify: FastifyInstance) {
       const serverSaveInfo = {
         id: serverSave.id,
         uploadedAt: serverSave.uploadedAt.toISOString(),
+        clientTimestamp: serverSave.clientTimestamp?.toISOString() ?? null,
         fileName: serverSave.fileName,
         fileSize: serverSave.fileSize.toString(),
         deviceName: serverSave.deviceName,
@@ -183,13 +184,17 @@ export async function saveRoutes(fastify: FastifyInstance) {
       const compareTime = (serverSave.clientTimestamp ?? serverSave.uploadedAt).getTime();
       const localTime = new Date(localTimestamp).getTime();
 
-      if (compareTime > localTime) {
-        return { gameId, action: 'download' as SyncAction, serverSave: serverSaveInfo };
-      } else if (localTime > compareTime) {
-        return { gameId, action: 'upload' as SyncAction, serverSave: serverSaveInfo };
-      } else {
-        return { gameId, action: 'in_sync' as SyncAction, serverSave: serverSaveInfo };
-      }
+      const action: SyncAction = compareTime > localTime ? 'download'
+        : localTime > compareTime ? 'upload'
+        : 'in_sync';
+
+      fastify.log.info(
+        `sync-status gameId=${gameId}: clientTimestamp=${serverSave.clientTimestamp?.toISOString() ?? 'null'} ` +
+        `uploadedAt=${serverSave.uploadedAt.toISOString()} compareTime=${compareTime} ` +
+        `localTime=${localTime} diff=${localTime - compareTime}ms → ${action}`
+      );
+
+      return { gameId, action, serverSave: serverSaveInfo };
     });
 
     return { games: results };
