@@ -36,6 +36,8 @@ import com.romadmin.app.ui.games.GameDetailViewModel;
 import com.romadmin.app.ui.games.GameDetailViewModel_HiltModules_KeyModule_ProvideFactory;
 import com.romadmin.app.ui.games.GameListViewModel;
 import com.romadmin.app.ui.games.GameListViewModel_HiltModules_KeyModule_ProvideFactory;
+import com.romadmin.app.ui.home.HomeViewModel;
+import com.romadmin.app.ui.home.HomeViewModel_HiltModules_KeyModule_ProvideFactory;
 import com.romadmin.app.ui.navigation.NavViewModel;
 import com.romadmin.app.ui.navigation.NavViewModel_HiltModules_KeyModule_ProvideFactory;
 import com.romadmin.app.ui.platforms.PlatformListViewModel;
@@ -409,7 +411,7 @@ public final class DaggerRomAdminApp_HiltComponents_SingletonC {
 
     @Override
     public Set<String> getViewModelKeys() {
-      return SetBuilder.<String>newSetBuilder(7).add(DownloadManagerViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(GameDetailViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(GameListViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(NavViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(PlatformListViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(SettingsViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(SetupViewModel_HiltModules_KeyModule_ProvideFactory.provide()).build();
+      return SetBuilder.<String>newSetBuilder(8).add(DownloadManagerViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(GameDetailViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(GameListViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(HomeViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(NavViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(PlatformListViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(SettingsViewModel_HiltModules_KeyModule_ProvideFactory.provide()).add(SetupViewModel_HiltModules_KeyModule_ProvideFactory.provide()).build();
     }
 
     @Override
@@ -443,6 +445,8 @@ public final class DaggerRomAdminApp_HiltComponents_SingletonC {
 
     private Provider<GameListViewModel> gameListViewModelProvider;
 
+    private Provider<HomeViewModel> homeViewModelProvider;
+
     private Provider<NavViewModel> navViewModelProvider;
 
     private Provider<PlatformListViewModel> platformListViewModelProvider;
@@ -467,15 +471,16 @@ public final class DaggerRomAdminApp_HiltComponents_SingletonC {
       this.downloadManagerViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 0);
       this.gameDetailViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 1);
       this.gameListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 2);
-      this.navViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 3);
-      this.platformListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 4);
-      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 5);
-      this.setupViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+      this.homeViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 3);
+      this.navViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 4);
+      this.platformListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 5);
+      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+      this.setupViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 7);
     }
 
     @Override
     public Map<String, javax.inject.Provider<ViewModel>> getHiltViewModelMap() {
-      return MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(7).put("com.romadmin.app.ui.downloads.DownloadManagerViewModel", ((Provider) downloadManagerViewModelProvider)).put("com.romadmin.app.ui.games.GameDetailViewModel", ((Provider) gameDetailViewModelProvider)).put("com.romadmin.app.ui.games.GameListViewModel", ((Provider) gameListViewModelProvider)).put("com.romadmin.app.ui.navigation.NavViewModel", ((Provider) navViewModelProvider)).put("com.romadmin.app.ui.platforms.PlatformListViewModel", ((Provider) platformListViewModelProvider)).put("com.romadmin.app.ui.settings.SettingsViewModel", ((Provider) settingsViewModelProvider)).put("com.romadmin.app.ui.setup.SetupViewModel", ((Provider) setupViewModelProvider)).build();
+      return MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(8).put("com.romadmin.app.ui.downloads.DownloadManagerViewModel", ((Provider) downloadManagerViewModelProvider)).put("com.romadmin.app.ui.games.GameDetailViewModel", ((Provider) gameDetailViewModelProvider)).put("com.romadmin.app.ui.games.GameListViewModel", ((Provider) gameListViewModelProvider)).put("com.romadmin.app.ui.home.HomeViewModel", ((Provider) homeViewModelProvider)).put("com.romadmin.app.ui.navigation.NavViewModel", ((Provider) navViewModelProvider)).put("com.romadmin.app.ui.platforms.PlatformListViewModel", ((Provider) platformListViewModelProvider)).put("com.romadmin.app.ui.settings.SettingsViewModel", ((Provider) settingsViewModelProvider)).put("com.romadmin.app.ui.setup.SetupViewModel", ((Provider) setupViewModelProvider)).build();
     }
 
     @Override
@@ -513,16 +518,19 @@ public final class DaggerRomAdminApp_HiltComponents_SingletonC {
           case 2: // com.romadmin.app.ui.games.GameListViewModel 
           return (T) new GameListViewModel(viewModelCImpl.savedStateHandle, singletonCImpl.gameRepositoryProvider.get(), singletonCImpl.platformRepositoryProvider.get(), singletonCImpl.downloadRepositoryProvider.get(), singletonCImpl.downloadDao());
 
-          case 3: // com.romadmin.app.ui.navigation.NavViewModel 
+          case 3: // com.romadmin.app.ui.home.HomeViewModel 
+          return (T) new HomeViewModel(singletonCImpl.downloadDao(), singletonCImpl.saveSyncDao(), singletonCImpl.saveSyncRepositoryProvider.get());
+
+          case 4: // com.romadmin.app.ui.navigation.NavViewModel 
           return (T) new NavViewModel(singletonCImpl.appPreferencesProvider.get());
 
-          case 4: // com.romadmin.app.ui.platforms.PlatformListViewModel 
+          case 5: // com.romadmin.app.ui.platforms.PlatformListViewModel 
           return (T) new PlatformListViewModel(singletonCImpl.platformRepositoryProvider.get());
 
-          case 5: // com.romadmin.app.ui.settings.SettingsViewModel 
+          case 6: // com.romadmin.app.ui.settings.SettingsViewModel 
           return (T) new SettingsViewModel(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.appPreferencesProvider.get(), singletonCImpl.saveSyncRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
 
-          case 6: // com.romadmin.app.ui.setup.SetupViewModel 
+          case 7: // com.romadmin.app.ui.setup.SetupViewModel 
           return (T) new SetupViewModel(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.authRepositoryProvider.get(), singletonCImpl.appPreferencesProvider.get());
 
           default: throw new AssertionError(id);

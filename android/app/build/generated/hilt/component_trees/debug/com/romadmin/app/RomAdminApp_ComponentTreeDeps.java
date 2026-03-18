@@ -28,6 +28,8 @@ import hilt_aggregated_deps._com_romadmin_app_ui_games_GameDetailViewModel_HiltM
 import hilt_aggregated_deps._com_romadmin_app_ui_games_GameDetailViewModel_HiltModules_KeyModule;
 import hilt_aggregated_deps._com_romadmin_app_ui_games_GameListViewModel_HiltModules_BindsModule;
 import hilt_aggregated_deps._com_romadmin_app_ui_games_GameListViewModel_HiltModules_KeyModule;
+import hilt_aggregated_deps._com_romadmin_app_ui_home_HomeViewModel_HiltModules_BindsModule;
+import hilt_aggregated_deps._com_romadmin_app_ui_home_HomeViewModel_HiltModules_KeyModule;
 import hilt_aggregated_deps._com_romadmin_app_ui_navigation_NavViewModel_HiltModules_BindsModule;
 import hilt_aggregated_deps._com_romadmin_app_ui_navigation_NavViewModel_HiltModules_KeyModule;
 import hilt_aggregated_deps._com_romadmin_app_ui_platforms_PlatformListViewModel_HiltModules_BindsModule;
@@ -89,6 +91,8 @@ import hilt_aggregated_deps._dagger_hilt_android_internal_modules_HiltWrapper_Ac
         _com_romadmin_app_ui_games_GameDetailViewModel_HiltModules_KeyModule.class,
         _com_romadmin_app_ui_games_GameListViewModel_HiltModules_BindsModule.class,
         _com_romadmin_app_ui_games_GameListViewModel_HiltModules_KeyModule.class,
+        _com_romadmin_app_ui_home_HomeViewModel_HiltModules_BindsModule.class,
+        _com_romadmin_app_ui_home_HomeViewModel_HiltModules_KeyModule.class,
         _com_romadmin_app_ui_navigation_NavViewModel_HiltModules_BindsModule.class,
         _com_romadmin_app_ui_navigation_NavViewModel_HiltModules_KeyModule.class,
         _com_romadmin_app_ui_platforms_PlatformListViewModel_HiltModules_BindsModule.class,

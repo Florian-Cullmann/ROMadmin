@@ -139,6 +139,7 @@ data class SyncStatusGame(
 data class ServerSaveInfo(
     val id: Int,
     val uploadedAt: String,
+    val clientTimestamp: String? = null,
     val fileName: String,
     val fileSize: String,
     val deviceName: String?,

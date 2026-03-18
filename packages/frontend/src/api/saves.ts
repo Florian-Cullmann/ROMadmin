@@ -21,6 +21,20 @@ export function deleteSave(saveId: number) {
   return apiRequest<{ success: boolean }>(`/saves/${saveId}`, { method: 'DELETE' });
 }
 
-export function downloadSaveUrl(saveId: number) {
-  return `/api/saves/${saveId}/download`;
+export async function downloadSave(saveId: number) {
+  const { token } = (await import('../stores/auth')).useAuthStore.getState();
+  const response = await fetch(`/api/saves/${saveId}/download`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new Error('Download failed');
+  const blob = await response.blob();
+  const disposition = response.headers.get('Content-Disposition');
+  const match = disposition?.match(/filename="(.+?)"/);
+  const filename = match?.[1] || 'save';
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }

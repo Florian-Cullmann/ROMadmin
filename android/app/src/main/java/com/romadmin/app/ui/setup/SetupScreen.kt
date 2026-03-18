@@ -32,8 +32,8 @@ enum class SetupStep { SERVER, LOGIN, STORAGE, DONE }
 
 data class SetupState(
     val step: SetupStep = SetupStep.SERVER,
-    val serverUrl: String = "",
-    val username: String = "",
+    val serverUrl: String = "http://192.168.1.200:3083",
+    val username: String = "admin",
     val password: String = "",
     val storagePath: String = "${Environment.getExternalStorageDirectory().absolutePath}/Roms",
     val savesPath: String = "${Environment.getExternalStorageDirectory().absolutePath}/RetroArch/saves",

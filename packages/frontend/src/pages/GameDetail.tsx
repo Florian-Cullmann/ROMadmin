@@ -27,7 +27,7 @@ import { notifications } from '@mantine/notifications';
 import { IconUpload, IconDownload, IconTrash, IconRefresh, IconSearch, IconCheck } from '@tabler/icons-react';
 import { getGame, fetchGameMetadata, searchIGDB, applyIGDBResult } from '../api/games';
 import type { IGDBSearchResult } from '../api/games';
-import { getSaves, uploadSave, deleteSave, downloadSaveUrl } from '../api/saves';
+import { getSaves, uploadSave, deleteSave, downloadSave } from '../api/saves';
 import { useAuthStore } from '../stores/auth';
 import { useState } from 'react';
 
@@ -375,9 +375,7 @@ export function GameDetail() {
                       <ActionIcon
                         variant="light"
                         color="blue"
-                        component="a"
-                        href={downloadSaveUrl(save.id)}
-                        download
+                        onClick={() => downloadSave(save.id)}
                       >
                         <IconDownload size={16} />
                       </ActionIcon>

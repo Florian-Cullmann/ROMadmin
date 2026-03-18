@@ -11,17 +11,19 @@ import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.`internal`.Util
 import java.lang.NullPointerException
+import java.lang.reflect.Constructor
 import kotlin.Int
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.emptySet
+import kotlin.jvm.Volatile
 import kotlin.text.buildString
 
 public class ServerSaveInfoJsonAdapter(
   moshi: Moshi,
 ) : JsonAdapter<ServerSaveInfo>() {
-  private val options: JsonReader.Options = JsonReader.Options.of("id", "uploadedAt", "fileName",
-      "fileSize", "deviceName")
+  private val options: JsonReader.Options = JsonReader.Options.of("id", "uploadedAt",
+      "clientTimestamp", "fileName", "fileSize", "deviceName")
 
   private val intAdapter: JsonAdapter<Int> = moshi.adapter(Int::class.java, emptySet(), "id")
 
@@ -29,7 +31,10 @@ public class ServerSaveInfoJsonAdapter(
       "uploadedAt")
 
   private val nullableStringAdapter: JsonAdapter<String?> = moshi.adapter(String::class.java,
-      emptySet(), "deviceName")
+      emptySet(), "clientTimestamp")
+
+  @Volatile
+  private var constructorRef: Constructor<ServerSaveInfo>? = null
 
   override fun toString(): String = buildString(36) {
       append("GeneratedJsonAdapter(").append("ServerSaveInfo").append(')') }
@@ -37,20 +42,27 @@ public class ServerSaveInfoJsonAdapter(
   override fun fromJson(reader: JsonReader): ServerSaveInfo {
     var id: Int? = null
     var uploadedAt: String? = null
+    var clientTimestamp: String? = null
     var fileName: String? = null
     var fileSize: String? = null
     var deviceName: String? = null
+    var mask0 = -1
     reader.beginObject()
     while (reader.hasNext()) {
       when (reader.selectName(options)) {
         0 -> id = intAdapter.fromJson(reader) ?: throw Util.unexpectedNull("id", "id", reader)
         1 -> uploadedAt = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull("uploadedAt",
             "uploadedAt", reader)
-        2 -> fileName = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull("fileName",
+        2 -> {
+          clientTimestamp = nullableStringAdapter.fromJson(reader)
+          // $mask = $mask and (1 shl 2).inv()
+          mask0 = mask0 and 0xfffffffb.toInt()
+        }
+        3 -> fileName = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull("fileName",
             "fileName", reader)
-        3 -> fileSize = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull("fileSize",
+        4 -> fileSize = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull("fileSize",
             "fileSize", reader)
-        4 -> deviceName = nullableStringAdapter.fromJson(reader)
+        5 -> deviceName = nullableStringAdapter.fromJson(reader)
         -1 -> {
           // Unknown name, skip it.
           reader.skipName()
@@ -59,13 +71,35 @@ public class ServerSaveInfoJsonAdapter(
       }
     }
     reader.endObject()
-    return ServerSaveInfo(
-        id = id ?: throw Util.missingProperty("id", "id", reader),
-        uploadedAt = uploadedAt ?: throw Util.missingProperty("uploadedAt", "uploadedAt", reader),
-        fileName = fileName ?: throw Util.missingProperty("fileName", "fileName", reader),
-        fileSize = fileSize ?: throw Util.missingProperty("fileSize", "fileSize", reader),
-        deviceName = deviceName
-    )
+    if (mask0 == 0xfffffffb.toInt()) {
+      // All parameters with defaults are set, invoke the constructor directly
+      return  ServerSaveInfo(
+          id = id ?: throw Util.missingProperty("id", "id", reader),
+          uploadedAt = uploadedAt ?: throw Util.missingProperty("uploadedAt", "uploadedAt", reader),
+          clientTimestamp = clientTimestamp,
+          fileName = fileName ?: throw Util.missingProperty("fileName", "fileName", reader),
+          fileSize = fileSize ?: throw Util.missingProperty("fileSize", "fileSize", reader),
+          deviceName = deviceName
+      )
+    } else {
+      // Reflectively invoke the synthetic defaults constructor
+      @Suppress("UNCHECKED_CAST")
+      val localConstructor: Constructor<ServerSaveInfo> = this.constructorRef ?:
+          ServerSaveInfo::class.java.getDeclaredConstructor(Int::class.javaPrimitiveType,
+          String::class.java, String::class.java, String::class.java, String::class.java,
+          String::class.java, Int::class.javaPrimitiveType, Util.DEFAULT_CONSTRUCTOR_MARKER).also {
+          this.constructorRef = it }
+      return localConstructor.newInstance(
+          id ?: throw Util.missingProperty("id", "id", reader),
+          uploadedAt ?: throw Util.missingProperty("uploadedAt", "uploadedAt", reader),
+          clientTimestamp,
+          fileName ?: throw Util.missingProperty("fileName", "fileName", reader),
+          fileSize ?: throw Util.missingProperty("fileSize", "fileSize", reader),
+          deviceName,
+          mask0,
+          /* DefaultConstructorMarker */ null
+      )
+    }
   }
 
   override fun toJson(writer: JsonWriter, value_: ServerSaveInfo?) {
@@ -77,6 +111,8 @@ public class ServerSaveInfoJsonAdapter(
     intAdapter.toJson(writer, value_.id)
     writer.name("uploadedAt")
     stringAdapter.toJson(writer, value_.uploadedAt)
+    writer.name("clientTimestamp")
+    nullableStringAdapter.toJson(writer, value_.clientTimestamp)
     writer.name("fileName")
     stringAdapter.toJson(writer, value_.fileName)
     writer.name("fileSize")

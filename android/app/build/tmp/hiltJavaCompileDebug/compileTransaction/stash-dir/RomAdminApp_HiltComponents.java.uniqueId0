@@ -6,6 +6,7 @@ import com.romadmin.app.di.DatabaseModule;
 import com.romadmin.app.ui.downloads.DownloadManagerViewModel_HiltModules;
 import com.romadmin.app.ui.games.GameDetailViewModel_HiltModules;
 import com.romadmin.app.ui.games.GameListViewModel_HiltModules;
+import com.romadmin.app.ui.home.HomeViewModel_HiltModules;
 import com.romadmin.app.ui.navigation.NavViewModel_HiltModules;
 import com.romadmin.app.ui.platforms.PlatformListViewModel_HiltModules;
 import com.romadmin.app.ui.settings.SettingsViewModel_HiltModules;
@@ -172,6 +173,7 @@ public final class RomAdminApp_HiltComponents {
           GameListViewModel_HiltModules.KeyModule.class,
           HiltWrapper_ActivityRetainedComponentManager_LifecycleModule.class,
           HiltWrapper_SavedStateHandleModule.class,
+          HomeViewModel_HiltModules.KeyModule.class,
           NavViewModel_HiltModules.KeyModule.class,
           PlatformListViewModel_HiltModules.KeyModule.class,
           ActivityCBuilderModule.class,
@@ -217,6 +219,7 @@ public final class RomAdminApp_HiltComponents {
           GameDetailViewModel_HiltModules.BindsModule.class,
           GameListViewModel_HiltModules.BindsModule.class,
           HiltWrapper_HiltViewModelFactory_ViewModelModule.class,
+          HomeViewModel_HiltModules.BindsModule.class,
           NavViewModel_HiltModules.BindsModule.class,
           PlatformListViewModel_HiltModules.BindsModule.class,
           SettingsViewModel_HiltModules.BindsModule.class,
