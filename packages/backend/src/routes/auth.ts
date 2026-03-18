@@ -25,15 +25,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.status(401).send({ error: 'INVALID_CREDENTIALS', message: 'Invalid username or password' });
     }
 
+    const { rememberMe } = result.data as { username: string; password: string; rememberMe?: boolean };
     const payload = { id: user.id, username: user.username, role: user.role };
     const accessToken = fastify.jwt.sign(payload);
-    const refreshToken = jwt.sign(payload, fastify.jwtRefreshSecret, { expiresIn: '7d' });
-
-    // Store refresh token
-    await fastify.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken },
-    });
+    const refreshToken = jwt.sign(payload, fastify.jwtRefreshSecret, { expiresIn: rememberMe ? '30d' : '7d' });
 
     return {
       accessToken,
@@ -60,10 +55,10 @@ export async function authRoutes(fastify: FastifyInstance) {
     try {
       const decoded = jwt.verify(refreshToken, fastify.jwtRefreshSecret) as { id: number; username: string; role: string };
 
-      // Verify token is still stored (not revoked)
+      // Verify user still exists
       const user = await fastify.prisma.user.findUnique({ where: { id: decoded.id } });
-      if (!user || user.refreshToken !== refreshToken) {
-        return reply.status(401).send({ error: 'INVALID_TOKEN', message: 'Refresh token is invalid or revoked' });
+      if (!user) {
+        return reply.status(401).send({ error: 'INVALID_TOKEN', message: 'User no longer exists' });
       }
 
       const payload = { id: user.id, username: user.username, role: user.role };

@@ -11,6 +11,7 @@ import {
   Stack,
   Alert,
   Center,
+  Checkbox,
   Text,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -27,7 +28,7 @@ export function Login() {
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm({
-    initialValues: { username: '', password: '' },
+    initialValues: { username: '', password: '', rememberMe: true },
     validate: {
       username: (v) => (v.length < 1 ? 'Required' : null),
       password: (v) => (v.length < 1 ? 'Required' : null),
@@ -38,7 +39,7 @@ export function Login() {
     setLoading(true);
     setError(null);
     try {
-      const res = await login(values.username, values.password);
+      const res = await login(values.username, values.password, values.rememberMe);
       setAuth(res.accessToken, res.refreshToken, res.user);
       // Set UI language to user preference
       i18n.changeLanguage(res.user.language);
@@ -76,6 +77,10 @@ export function Login() {
               label={t('auth.password')}
               placeholder="Your password"
               {...form.getInputProps('password')}
+            />
+            <Checkbox
+              label={t('auth.rememberMe')}
+              {...form.getInputProps('rememberMe', { type: 'checkbox' })}
             />
             <Button type="submit" fullWidth loading={loading}>
               {t('auth.loginButton')}

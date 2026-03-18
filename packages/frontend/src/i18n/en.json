@@ -20,7 +20,8 @@
     "password": "Password",
     "loginTitle": "Sign in to RomAdmin",
     "loginButton": "Sign In",
-    "invalidCredentials": "Invalid username or password"
+    "invalidCredentials": "Invalid username or password",
+    "rememberMe": "Remember me"
   },
   "install": {
     "title": "Welcome to RomAdmin",
