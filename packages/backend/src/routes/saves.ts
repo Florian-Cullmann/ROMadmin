@@ -4,6 +4,13 @@ import { verifyAuth } from '../hooks/auth.js';
 import fs from 'fs/promises';
 import path from 'path';
 
+function getMultipartFieldValue(field: unknown): string | null {
+  if (typeof field === 'object' && field !== null && 'value' in field) {
+    return (field as { value: string }).value;
+  }
+  return field ? String(field) : null;
+}
+
 export async function saveRoutes(fastify: FastifyInstance) {
   fastify.addHook('onRequest', verifyAuth);
 
@@ -14,16 +21,9 @@ export async function saveRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'NO_FILE', message: 'No file uploaded' });
     }
 
-    const gameIdField = data.fields.gameId;
-    const gameIdRaw = typeof gameIdField === 'object' && gameIdField !== null && 'value' in gameIdField
-      ? (gameIdField as { value: string }).value
-      : String(gameIdField ?? '');
-    const gameId = parseInt(gameIdRaw);
-
-    const deviceNameField = data.fields.deviceName;
-    const deviceName = typeof deviceNameField === 'object' && deviceNameField !== null && 'value' in deviceNameField
-      ? (deviceNameField as { value: string }).value
-      : (deviceNameField ? String(deviceNameField) : null);
+    const gameId = parseInt(getMultipartFieldValue(data.fields.gameId) ?? '');
+    const deviceName = getMultipartFieldValue(data.fields.deviceName);
+    const clientTimestampRaw = getMultipartFieldValue(data.fields.clientTimestamp);
 
     if (!gameId || isNaN(gameId)) {
       return reply.status(400).send({ error: 'INVALID_GAME_ID', message: 'Valid gameId is required' });
@@ -54,6 +54,9 @@ export async function saveRoutes(fastify: FastifyInstance) {
     const buffer = await data.toBuffer();
     await fs.writeFile(filePath, buffer);
 
+    // Parse client timestamp if provided
+    const clientTimestamp = clientTimestampRaw ? new Date(clientTimestampRaw) : null;
+
     // Mark previous saves as not latest
     await fastify.prisma.saveFile.updateMany({
       where: { gameId, userId: request.user.id, isLatest: true },
@@ -69,6 +72,7 @@ export async function saveRoutes(fastify: FastifyInstance) {
         filePath,
         fileSize: BigInt(buffer.length),
         deviceName,
+        clientTimestamp: clientTimestamp && !isNaN(clientTimestamp.getTime()) ? clientTimestamp : null,
         isLatest: true,
       },
     });
@@ -79,7 +83,6 @@ export async function saveRoutes(fastify: FastifyInstance) {
   // List saves for a game
   fastify.get<{ Params: { gameId: string } }>('/game/:gameId', async (request) => {
     const where: Record<string, unknown> = { gameId: parseInt(request.params.gameId) };
-    // Non-admin users can only see their own saves
     if (request.user.role !== 'ADMIN') {
       where.userId = request.user.id;
     }
@@ -122,7 +125,6 @@ export async function saveRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'FORBIDDEN', message: 'Access denied' });
     }
 
-    // Delete from disk
     try {
       await fs.unlink(save.filePath);
     } catch {
@@ -143,7 +145,6 @@ export async function saveRoutes(fastify: FastifyInstance) {
 
     const gameIds = clientGames.map((g) => g.gameId);
 
-    // Get the latest save for each game for this user
     const serverSaves = await fastify.prisma.saveFile.findMany({
       where: {
         gameId: { in: gameIds },
@@ -152,7 +153,6 @@ export async function saveRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // Index by gameId for quick lookup
     type SaveRecord = typeof serverSaves[number];
     const savesByGameId: Record<number, SaveRecord> = {};
     for (const s of serverSaves) {
@@ -178,12 +178,14 @@ export async function saveRoutes(fastify: FastifyInstance) {
         return { gameId, action: 'download' as SyncAction, serverSave: serverSaveInfo };
       }
 
-      const serverTime = serverSave.uploadedAt.getTime();
+      // Compare against clientTimestamp (the file's mtime when it was uploaded)
+      // rather than uploadedAt (server receipt time) to avoid ping-pong
+      const compareTime = (serverSave.clientTimestamp ?? serverSave.uploadedAt).getTime();
       const localTime = new Date(localTimestamp).getTime();
 
-      if (serverTime > localTime) {
+      if (compareTime > localTime) {
         return { gameId, action: 'download' as SyncAction, serverSave: serverSaveInfo };
-      } else if (localTime > serverTime) {
+      } else if (localTime > compareTime) {
         return { gameId, action: 'upload' as SyncAction, serverSave: serverSaveInfo };
       } else {
         return { gameId, action: 'in_sync' as SyncAction, serverSave: serverSaveInfo };

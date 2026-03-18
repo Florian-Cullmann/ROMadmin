@@ -89,8 +89,9 @@ model SaveFile {
   filePath   String   @map("file_path") @db.VarChar(1000)
   fileSize   BigInt   @map("file_size")
   deviceName String?  @map("device_name") @db.VarChar(100)
-  isLatest   Boolean  @default(true) @map("is_latest")
-  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  isLatest        Boolean  @default(true) @map("is_latest")
+  clientTimestamp  DateTime? @map("client_timestamp")
+  uploadedAt      DateTime @default(now()) @map("uploaded_at")
   game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

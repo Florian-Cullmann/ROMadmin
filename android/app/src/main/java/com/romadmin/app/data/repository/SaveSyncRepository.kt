@@ -310,6 +310,7 @@ class SaveSyncRepository @Inject constructor(
             .setType(MultipartBody.FORM)
             .addFormDataPart("gameId", gameId.toString())
             .addFormDataPart("deviceName", deviceName)
+            .addFormDataPart("clientTimestamp", ISO_FORMAT.format(Date(file.lastModified())))
             .addFormDataPart("file", file.name, requestFile)
             .build()
 
