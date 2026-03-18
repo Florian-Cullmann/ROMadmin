@@ -14,13 +14,24 @@ model User {
   passwordHash String     @map("password_hash") @db.VarChar(255)
   role         UserRole   @default(USER)
   language     String     @default("en") @db.VarChar(5)
-  apiKey       String?    @unique @map("api_key") @db.VarChar(64)
-  refreshToken String?    @map("refresh_token") @db.VarChar(255)
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   saveFiles    SaveFile[]
+  sessions     Session[]
 
   @@map("users")
+}
+
+model Session {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique @db.VarChar(64)
+  userId     Int      @map("user_id")
+  deviceName String?  @map("device_name") @db.VarChar(100)
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
 }
 
 enum UserRole {

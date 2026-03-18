@@ -4,8 +4,6 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
   PORT: z.coerce.number().default(3000),
   NODE_ENV: z.enum(['development', 'production']).default('development'),
-  JWT_SECRET: z.string().min(16),
-  JWT_REFRESH_SECRET: z.string().min(16),
   ROM_PATH: z.string().default('/roms'),
   SAVE_PATH: z.string().default('/saves'),
   MEDIA_PATH: z.string().default('/media'),

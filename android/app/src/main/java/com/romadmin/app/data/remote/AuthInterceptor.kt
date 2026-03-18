@@ -1,5 +1,6 @@
 package com.romadmin.app.data.remote
 
+import android.util.Log
 import com.romadmin.app.data.preferences.AppPreferences
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -14,12 +15,13 @@ class AuthInterceptor @Inject constructor(
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val apiKey = runBlocking { prefs.apiKey.first() }
-        val request = if (!apiKey.isNullOrBlank()) {
+        val token = runBlocking { prefs.sessionToken.first() }
+        val request = if (!token.isNullOrBlank()) {
             chain.request().newBuilder()
-                .header("x-api-key", apiKey)
+                .header("Authorization", "Bearer $token")
                 .build()
         } else {
+            Log.w("AuthInterceptor", "No session token found in DataStore!")
             chain.request()
         }
         return chain.proceed(request)

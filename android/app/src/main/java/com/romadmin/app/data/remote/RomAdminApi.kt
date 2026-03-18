@@ -13,9 +13,6 @@ interface RomAdminApi {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
-    @POST("api/auth/generate-api-key")
-    suspend fun generateApiKey(): ApiKeyResponse
-
     @GET("api/auth/me")
     suspend fun me(): User
 

@@ -19,11 +19,10 @@ import kotlin.text.buildString
 public class LoginResponseJsonAdapter(
   moshi: Moshi,
 ) : JsonAdapter<LoginResponse>() {
-  private val options: JsonReader.Options = JsonReader.Options.of("accessToken", "refreshToken",
-      "user")
+  private val options: JsonReader.Options = JsonReader.Options.of("token", "user")
 
   private val stringAdapter: JsonAdapter<String> = moshi.adapter(String::class.java, emptySet(),
-      "accessToken")
+      "token")
 
   private val userAdapter: JsonAdapter<User> = moshi.adapter(User::class.java, emptySet(), "user")
 
@@ -31,17 +30,14 @@ public class LoginResponseJsonAdapter(
       append("GeneratedJsonAdapter(").append("LoginResponse").append(')') }
 
   override fun fromJson(reader: JsonReader): LoginResponse {
-    var accessToken: String? = null
-    var refreshToken: String? = null
+    var token: String? = null
     var user: User? = null
     reader.beginObject()
     while (reader.hasNext()) {
       when (reader.selectName(options)) {
-        0 -> accessToken = stringAdapter.fromJson(reader) ?:
-            throw Util.unexpectedNull("accessToken", "accessToken", reader)
-        1 -> refreshToken = stringAdapter.fromJson(reader) ?:
-            throw Util.unexpectedNull("refreshToken", "refreshToken", reader)
-        2 -> user = userAdapter.fromJson(reader) ?: throw Util.unexpectedNull("user", "user",
+        0 -> token = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull("token", "token",
+            reader)
+        1 -> user = userAdapter.fromJson(reader) ?: throw Util.unexpectedNull("user", "user",
             reader)
         -1 -> {
           // Unknown name, skip it.
@@ -52,10 +48,7 @@ public class LoginResponseJsonAdapter(
     }
     reader.endObject()
     return LoginResponse(
-        accessToken = accessToken ?: throw Util.missingProperty("accessToken", "accessToken",
-            reader),
-        refreshToken = refreshToken ?: throw Util.missingProperty("refreshToken", "refreshToken",
-            reader),
+        token = token ?: throw Util.missingProperty("token", "token", reader),
         user = user ?: throw Util.missingProperty("user", "user", reader)
     )
   }
@@ -65,10 +58,8 @@ public class LoginResponseJsonAdapter(
       throw NullPointerException("value_ was null! Wrap in .nullSafe() to write nullable values.")
     }
     writer.beginObject()
-    writer.name("accessToken")
-    stringAdapter.toJson(writer, value_.accessToken)
-    writer.name("refreshToken")
-    stringAdapter.toJson(writer, value_.refreshToken)
+    writer.name("token")
+    stringAdapter.toJson(writer, value_.token)
     writer.name("user")
     userAdapter.toJson(writer, value_.user)
     writer.endObject()

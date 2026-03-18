@@ -20,8 +20,7 @@
     "password": "Passwort",
     "loginTitle": "Bei RomAdmin anmelden",
     "loginButton": "Anmelden",
-    "invalidCredentials": "Ungültiger Benutzername oder Passwort",
-    "rememberMe": "Angemeldet bleiben"
+    "invalidCredentials": "Ungültiger Benutzername oder Passwort"
   },
   "install": {
     "title": "Willkommen bei RomAdmin",

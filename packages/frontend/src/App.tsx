@@ -18,7 +18,7 @@ export function App() {
     queryFn: getInstallStatus,
   });
 
-  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
+  const isAuthenticated = useAuthStore((s) => !!s.token);
 
   if (isLoading) {
     return <LoadingOverlay visible />;

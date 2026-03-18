@@ -22,7 +22,7 @@ class AppPreferences @Inject constructor(
     private val dataStore = context.dataStore
 
     val serverUrl: Flow<String?> = dataStore.data.map { it[KEY_SERVER_URL] }
-    val apiKey: Flow<String?> = dataStore.data.map { it[KEY_API_KEY] }
+    val sessionToken: Flow<String?> = dataStore.data.map { it[KEY_SESSION_TOKEN] }
     val storageRoot: Flow<String?> = dataStore.data.map { it[KEY_STORAGE_ROOT] }
     val savesRootPath: Flow<String?> = dataStore.data.map { it[KEY_SAVES_ROOT] }
     val deviceName: Flow<String?> = dataStore.data.map { it[KEY_DEVICE_NAME] }
@@ -31,7 +31,7 @@ class AppPreferences @Inject constructor(
 
     val isSetupComplete: Flow<Boolean> = dataStore.data.map {
         !it[KEY_SERVER_URL].isNullOrBlank() &&
-        !it[KEY_API_KEY].isNullOrBlank() &&
+        !it[KEY_SESSION_TOKEN].isNullOrBlank() &&
         !it[KEY_STORAGE_ROOT].isNullOrBlank()
     }
 
@@ -39,8 +39,8 @@ class AppPreferences @Inject constructor(
         dataStore.edit { it[KEY_SERVER_URL] = url }
     }
 
-    suspend fun setApiKey(key: String) {
-        dataStore.edit { it[KEY_API_KEY] = key }
+    suspend fun setSessionToken(token: String) {
+        dataStore.edit { it[KEY_SESSION_TOKEN] = token }
     }
 
     suspend fun setStorageRoot(path: String) {
@@ -87,7 +87,7 @@ class AppPreferences @Inject constructor(
 
     companion object {
         private val KEY_SERVER_URL = stringPreferencesKey("server_url")
-        private val KEY_API_KEY = stringPreferencesKey("api_key")
+        private val KEY_SESSION_TOKEN = stringPreferencesKey("session_token")
         private val KEY_STORAGE_ROOT = stringPreferencesKey("storage_root")
         private val KEY_SAVES_ROOT = stringPreferencesKey("saves_root")
         private val KEY_DEVICE_NAME = stringPreferencesKey("device_name")

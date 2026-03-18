@@ -2,6 +2,7 @@ package com.romadmin.app.ui.settings;
 
 import android.content.Context;
 import com.romadmin.app.data.preferences.AppPreferences;
+import com.romadmin.app.data.repository.AuthRepository;
 import com.romadmin.app.data.repository.SaveSyncRepository;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -30,27 +31,32 @@ public final class SettingsViewModel_Factory implements Factory<SettingsViewMode
 
   private final Provider<SaveSyncRepository> saveSyncRepositoryProvider;
 
+  private final Provider<AuthRepository> authRepositoryProvider;
+
   public SettingsViewModel_Factory(Provider<Context> contextProvider,
       Provider<AppPreferences> prefsProvider,
-      Provider<SaveSyncRepository> saveSyncRepositoryProvider) {
+      Provider<SaveSyncRepository> saveSyncRepositoryProvider,
+      Provider<AuthRepository> authRepositoryProvider) {
     this.contextProvider = contextProvider;
     this.prefsProvider = prefsProvider;
     this.saveSyncRepositoryProvider = saveSyncRepositoryProvider;
+    this.authRepositoryProvider = authRepositoryProvider;
   }
 
   @Override
   public SettingsViewModel get() {
-    return newInstance(contextProvider.get(), prefsProvider.get(), saveSyncRepositoryProvider.get());
+    return newInstance(contextProvider.get(), prefsProvider.get(), saveSyncRepositoryProvider.get(), authRepositoryProvider.get());
   }
 
   public static SettingsViewModel_Factory create(Provider<Context> contextProvider,
       Provider<AppPreferences> prefsProvider,
-      Provider<SaveSyncRepository> saveSyncRepositoryProvider) {
-    return new SettingsViewModel_Factory(contextProvider, prefsProvider, saveSyncRepositoryProvider);
+      Provider<SaveSyncRepository> saveSyncRepositoryProvider,
+      Provider<AuthRepository> authRepositoryProvider) {
+    return new SettingsViewModel_Factory(contextProvider, prefsProvider, saveSyncRepositoryProvider, authRepositoryProvider);
   }
 
   public static SettingsViewModel newInstance(Context context, AppPreferences prefs,
-      SaveSyncRepository saveSyncRepository) {
-    return new SettingsViewModel(context, prefs, saveSyncRepository);
+      SaveSyncRepository saveSyncRepository, AuthRepository authRepository) {
+    return new SettingsViewModel(context, prefs, saveSyncRepository, authRepository);
   }
 }

@@ -520,7 +520,7 @@ public final class DaggerRomAdminApp_HiltComponents_SingletonC {
           return (T) new PlatformListViewModel(singletonCImpl.platformRepositoryProvider.get());
 
           case 5: // com.romadmin.app.ui.settings.SettingsViewModel 
-          return (T) new SettingsViewModel(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.appPreferencesProvider.get(), singletonCImpl.saveSyncRepositoryProvider.get());
+          return (T) new SettingsViewModel(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.appPreferencesProvider.get(), singletonCImpl.saveSyncRepositoryProvider.get(), singletonCImpl.authRepositoryProvider.get());
 
           case 6: // com.romadmin.app.ui.setup.SetupViewModel 
           return (T) new SetupViewModel(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.authRepositoryProvider.get(), singletonCImpl.appPreferencesProvider.get());
@@ -696,6 +696,7 @@ public final class DaggerRomAdminApp_HiltComponents_SingletonC {
 
     private RomAdminApp injectRomAdminApp2(RomAdminApp instance) {
       RomAdminApp_MembersInjector.injectWorkerFactory(instance, hiltWorkerFactory());
+      RomAdminApp_MembersInjector.injectPrefs(instance, appPreferencesProvider.get());
       return instance;
     }
 

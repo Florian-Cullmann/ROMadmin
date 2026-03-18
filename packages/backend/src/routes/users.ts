@@ -2,7 +2,6 @@ import type { FastifyInstance } from 'fastify';
 import { verifyAuth, verifyAdmin } from '../hooks/auth.js';
 import { createUserSchema, updateUserSchema } from '@romadmin/shared';
 import { hashPassword } from '../utils/password.js';
-import crypto from 'crypto';
 
 export async function userRoutes(fastify: FastifyInstance) {
   fastify.addHook('onRequest', verifyAuth);
@@ -77,18 +76,4 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Generate API key for user
-  fastify.post<{ Params: { id: string } }>('/:id/api-key', async (request, reply) => {
-    const apiKey = crypto.randomBytes(32).toString('hex');
-    try {
-      await fastify.prisma.user.update({
-        where: { id: parseInt(request.params.id) },
-        data: { apiKey },
-      });
-      // Return the raw key - it's only shown once
-      return { apiKey };
-    } catch {
-      return reply.status(404).send({ error: 'NOT_FOUND', message: 'User not found' });
-    }
-  });
 }

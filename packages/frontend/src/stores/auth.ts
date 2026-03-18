@@ -3,29 +3,24 @@ import { persist } from 'zustand/middleware';
 import type { User } from '@romadmin/shared';
 
 interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
+  token: string | null;
   user: User | null;
-  setAuth: (accessToken: string, refreshToken: string, user: User) => void;
-  setAccessToken: (token: string) => void;
+  setAuth: (token: string, user: User) => void;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      accessToken: null,
-      refreshToken: null,
+      token: null,
       user: null,
-      setAuth: (accessToken, refreshToken, user) => set({ accessToken, refreshToken, user }),
-      setAccessToken: (accessToken) => set({ accessToken }),
-      logout: () => set({ accessToken: null, refreshToken: null, user: null }),
+      setAuth: (token, user) => set({ token, user }),
+      logout: () => set({ token: null, user: null }),
     }),
     {
       name: 'romadmin-auth',
       partialize: (state) => ({
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        token: state.token,
         user: state.user,
       }),
     }

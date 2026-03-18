@@ -20,7 +20,7 @@ export async function buildApp(env: Env) {
   // Register plugins
   await app.register(corsPlugin);
   await app.register(prismaPlugin);
-  await app.register(authPlugin, { jwtSecret: env.JWT_SECRET, jwtRefreshSecret: env.JWT_REFRESH_SECRET });
+  await app.register(authPlugin);
   await app.register(multipartPlugin);
   await app.register(staticPlugin, { frontendPath: env.NODE_ENV === 'production' ? '../frontend/dist' : undefined });
 

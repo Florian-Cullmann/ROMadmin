@@ -1,26 +1,22 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import bcrypt from 'bcrypt';
 
 export async function verifyAuth(request: FastifyRequest, reply: FastifyReply) {
-  // Check for API key first
-  const apiKey = request.headers['x-api-key'] as string | undefined;
-  if (apiKey) {
-    const user = await request.server.prisma.user.findFirst({
-      where: { apiKey },
-    });
-    if (user) {
-      request.user = { id: user.id, username: user.username, role: user.role };
-      return;
-    }
-    return reply.status(401).send({ error: 'INVALID_API_KEY', message: 'Invalid API key' });
+  const authHeader = request.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Missing or invalid authorization header' });
   }
 
-  // Fall back to JWT
-  try {
-    await request.jwtVerify();
-  } catch {
-    return reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' });
+  const token = authHeader.slice(7);
+  const session = await request.server.prisma.session.findUnique({
+    where: { token },
+    include: { user: { select: { id: true, username: true, role: true } } },
+  });
+
+  if (!session) {
+    return reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Invalid session token' });
   }
+
+  request.user = session.user;
 }
 
 export async function verifyAdmin(request: FastifyRequest, reply: FastifyReply) {

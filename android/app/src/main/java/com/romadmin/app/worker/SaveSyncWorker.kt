@@ -28,6 +28,10 @@ class SaveSyncWorker @AssistedInject constructor(
             val count = saveSyncRepository.performSync()
             Log.i("SaveSyncWorker", "Sync completed: $count files synced")
             Result.success()
+        } catch (e: retrofit2.HttpException) {
+            Log.e("SaveSyncWorker", "Sync failed: HTTP ${e.code()} - ${e.message()}", e)
+            // Don't retry auth failures
+            if (e.code() == 401) Result.failure() else if (runAttemptCount < 3) Result.retry() else Result.failure()
         } catch (e: Exception) {
             Log.e("SaveSyncWorker", "Sync failed", e)
             if (runAttemptCount < 3) Result.retry() else Result.failure()

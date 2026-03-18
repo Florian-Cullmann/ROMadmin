@@ -8,20 +8,12 @@ export interface ApiError {
 export interface LoginRequest {
   username: string;
   password: string;
+  deviceName?: string;
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
+  token: string;
   user: User;
-}
-
-export interface RefreshRequest {
-  refreshToken: string;
-}
-
-export interface RefreshResponse {
-  accessToken: string;
 }
 
 export interface InstallStatusResponse {

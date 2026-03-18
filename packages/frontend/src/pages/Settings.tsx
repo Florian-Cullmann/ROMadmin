@@ -398,7 +398,7 @@ function IGDBTab() {
   const metadataMutation = useMutation({
     mutationFn: () => fetch('/api/scanner/fetch-metadata', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken}` },
+      headers: { 'Authorization': `Bearer ${useAuthStore.getState().token}` },
     }),
     onSuccess: () => {
       notifications.show({ title: 'IGDB', message: 'Metadata fetch started in background', color: 'blue' });

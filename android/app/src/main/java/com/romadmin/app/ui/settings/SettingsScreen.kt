@@ -69,9 +69,9 @@ class SettingsViewModel @Inject constructor(
                     _reAuthState.value = ReAuthState.Error("No server URL configured")
                     return@launch
                 }
-                val response = authRepository.login(url, usernameInput, password)
-                val apiKey = authRepository.generateApiKey(url, response.accessToken)
-                prefs.setApiKey(apiKey)
+                val device = prefs.deviceName.first()
+                val response = authRepository.login(url, usernameInput, password, device)
+                prefs.setSessionToken(response.token)
                 prefs.setUser(response.user.id, response.user.username)
                 _reAuthState.value = ReAuthState.Success
             } catch (e: Exception) {
@@ -209,7 +209,7 @@ fun SettingsScreen(
                     title = { Text("Re-authenticate") },
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Sign in again to refresh your API key.", style = MaterialTheme.typography.bodySmall)
+                            Text("Sign in again to get a new session.", style = MaterialTheme.typography.bodySmall)
                             OutlinedTextField(
                                 value = reAuthUser,
                                 onValueChange = { reAuthUser = it },

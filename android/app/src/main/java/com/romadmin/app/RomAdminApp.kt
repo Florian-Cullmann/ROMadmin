@@ -77,7 +77,7 @@ class RomAdminApp : Application(), Configuration.Provider {
             WorkManager.getInstance(this@RomAdminApp)
                 .enqueueUniquePeriodicWork(
                     SaveSyncWorker.WORK_NAME_PERIODIC,
-                    ExistingPeriodicWorkPolicy.KEEP,
+                    ExistingPeriodicWorkPolicy.UPDATE,
                     request,
                 )
         }

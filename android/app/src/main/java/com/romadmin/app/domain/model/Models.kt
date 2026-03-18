@@ -78,18 +78,13 @@ data class PaginatedResponse<T>(
 data class LoginRequest(
     val username: String,
     val password: String,
+    val deviceName: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
 data class LoginResponse(
-    val accessToken: String,
-    val refreshToken: String,
+    val token: String,
     val user: User,
-)
-
-@JsonClass(generateAdapter = true)
-data class ApiKeyResponse(
-    val apiKey: String,
 )
 
 @JsonClass(generateAdapter = true)

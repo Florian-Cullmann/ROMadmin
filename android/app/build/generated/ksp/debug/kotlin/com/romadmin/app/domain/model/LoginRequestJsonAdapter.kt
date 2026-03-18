@@ -11,18 +11,28 @@ import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.`internal`.Util
 import java.lang.NullPointerException
+import java.lang.reflect.Constructor
+import kotlin.Int
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.emptySet
+import kotlin.jvm.Volatile
 import kotlin.text.buildString
 
 public class LoginRequestJsonAdapter(
   moshi: Moshi,
 ) : JsonAdapter<LoginRequest>() {
-  private val options: JsonReader.Options = JsonReader.Options.of("username", "password")
+  private val options: JsonReader.Options = JsonReader.Options.of("username", "password",
+      "deviceName")
 
   private val stringAdapter: JsonAdapter<String> = moshi.adapter(String::class.java, emptySet(),
       "username")
+
+  private val nullableStringAdapter: JsonAdapter<String?> = moshi.adapter(String::class.java,
+      emptySet(), "deviceName")
+
+  @Volatile
+  private var constructorRef: Constructor<LoginRequest>? = null
 
   override fun toString(): String = buildString(34) {
       append("GeneratedJsonAdapter(").append("LoginRequest").append(')') }
@@ -30,6 +40,8 @@ public class LoginRequestJsonAdapter(
   override fun fromJson(reader: JsonReader): LoginRequest {
     var username: String? = null
     var password: String? = null
+    var deviceName: String? = null
+    var mask0 = -1
     reader.beginObject()
     while (reader.hasNext()) {
       when (reader.selectName(options)) {
@@ -37,6 +49,11 @@ public class LoginRequestJsonAdapter(
             "username", reader)
         1 -> password = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull("password",
             "password", reader)
+        2 -> {
+          deviceName = nullableStringAdapter.fromJson(reader)
+          // $mask = $mask and (1 shl 2).inv()
+          mask0 = mask0 and 0xfffffffb.toInt()
+        }
         -1 -> {
           // Unknown name, skip it.
           reader.skipName()
@@ -45,10 +62,28 @@ public class LoginRequestJsonAdapter(
       }
     }
     reader.endObject()
-    return LoginRequest(
-        username = username ?: throw Util.missingProperty("username", "username", reader),
-        password = password ?: throw Util.missingProperty("password", "password", reader)
-    )
+    if (mask0 == 0xfffffffb.toInt()) {
+      // All parameters with defaults are set, invoke the constructor directly
+      return  LoginRequest(
+          username = username ?: throw Util.missingProperty("username", "username", reader),
+          password = password ?: throw Util.missingProperty("password", "password", reader),
+          deviceName = deviceName
+      )
+    } else {
+      // Reflectively invoke the synthetic defaults constructor
+      @Suppress("UNCHECKED_CAST")
+      val localConstructor: Constructor<LoginRequest> = this.constructorRef ?:
+          LoginRequest::class.java.getDeclaredConstructor(String::class.java, String::class.java,
+          String::class.java, Int::class.javaPrimitiveType, Util.DEFAULT_CONSTRUCTOR_MARKER).also {
+          this.constructorRef = it }
+      return localConstructor.newInstance(
+          username ?: throw Util.missingProperty("username", "username", reader),
+          password ?: throw Util.missingProperty("password", "password", reader),
+          deviceName,
+          mask0,
+          /* DefaultConstructorMarker */ null
+      )
+    }
   }
 
   override fun toJson(writer: JsonWriter, value_: LoginRequest?) {
@@ -60,6 +95,8 @@ public class LoginRequestJsonAdapter(
     stringAdapter.toJson(writer, value_.username)
     writer.name("password")
     stringAdapter.toJson(writer, value_.password)
+    writer.name("deviceName")
+    nullableStringAdapter.toJson(writer, value_.deviceName)
     writer.endObject()
   }
 }

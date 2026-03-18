@@ -40,9 +40,6 @@ data class SetupState(
     val deviceName: String = Build.MODEL,
     val isLoading: Boolean = false,
     val error: String? = null,
-    // Internal state for auth flow
-    val accessToken: String? = null,
-    val userId: Int? = null,
 )
 
 @HiltViewModel
@@ -85,19 +82,16 @@ class SetupViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, error = null)
             try {
                 val s = _state.value
-                val response = authRepository.login(s.serverUrl.trim(), s.username.trim(), s.password)
-                // Generate an API key for persistent auth
-                val apiKey = authRepository.generateApiKey(s.serverUrl.trim(), response.accessToken)
+                val response = authRepository.login(
+                    s.serverUrl.trim(), s.username.trim(), s.password, s.deviceName.trim()
+                )
                 _state.value = _state.value.copy(
                     isLoading = false,
                     step = SetupStep.STORAGE,
-                    accessToken = response.accessToken,
-                    userId = response.user.id,
                 )
-                // Save auth immediately
                 authRepository.saveSetup(
                     serverUrl = s.serverUrl.trim(),
-                    apiKey = apiKey,
+                    token = response.token,
                     userId = response.user.id,
                     username = response.user.username,
                 )
